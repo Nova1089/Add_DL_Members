@@ -30,7 +30,7 @@ function TryConnect-AzureAD
 
     while (-not($connected))
     {
-        Write-Host "Connecting to Azure AD..." -ForegroundColor $infoColor
+        Write-Host "Connecting to Azure AD..." -ForegroundColor "DarkCyan"
         Connect-AzureAD -ErrorAction SilentlyContinue | Out-Null
 
         $connected = Test-ConnectedToAzureAD
@@ -65,6 +65,7 @@ function PromptFor-DL
 
 function PromptFor-UserCsvInputs
 {
+    Write-Host "Script requires CSV list of users and must include a hearer named `"UserPrincipalName`"." -ForegroundColor "DarkCyan"
     $csvPath = Read-Host "Enter path to user CSV (must be .csv)"
     $csvPath = $csvPath.Trim('"')
     return Import-Csv -Path $csvPath
@@ -119,14 +120,20 @@ function Grant-Members($dl, $userCsv, $excludeDisabledUsers)
         if ($excludeDisabledUsers)
         {
             $userEnabled = Confirm-UserEnabled $user.UserPrincipalName
+            if ($null -eq $userEnabled)
+            { 
+                Log-Warning "The user $($user.UserPrincipalName) was not found. Skipping user."
+                continue 
+            }
+
             if (-not($userEnabled)) 
             { 
-                Log-Warning "The following user is disabled, so they will not be added: $($user.UserPrincipalName)"
+                Log-Warning "The user $($user.UserPrincipalName) is disabled. Skipping user."
                 continue 
             }
         }
 
-        Grant-DLMember -Dl $dl -UserRecord $user
+        Grant-DLMember -DL $dl -UPN $user.UserPrincipalName
     }
 }
 
@@ -134,11 +141,7 @@ function Confirm-UserEnabled($upn)
 {
     $upn = $upn.Trim()
     $user = Get-AzureADUser -ObjectId $upn -ErrorAction "SilentlyContinue"
-    if ($null -eq $user) 
-    {
-        Log-Warning "The user $upn was not found. Skipping user."
-        return $false
-    }
+    if ($null -eq $user) { return }
     return $user.AccountEnabled
 }
 
@@ -147,7 +150,7 @@ function Grant-DLMember($dl, $upn)
     if ($null -eq $upn) { return }
 
     $dlEmail = $dl.PrimarySmtpAddress.Trim()
-    $upn = $upn.PrimarySmtpAddress.Trim()
+    $upn = $upn.Trim()
 
     try
     {
@@ -183,8 +186,8 @@ Testing
 Input file with 1 user
 Input file with 2 users
 
-User is already a member
 User is not already a member
+User is already a member
 User is already an owner
 User email was not found
 User is disabled
