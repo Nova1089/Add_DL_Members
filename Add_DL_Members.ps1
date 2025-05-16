@@ -179,19 +179,3 @@ if ($excludeDisabledUsers) { TryConnect-AzureAD }
 Grant-Members -DL $dl -UserCsv $userCsv -ExcludeDisabledUsers $excludeDisabledUsers
 Write-Host "All done!" -ForegroundColor "Green"
 Read-Host -Prompt "Press Enter to exit"
-
-
-<#
-Testing
-Input file with 1 user
-Input file with 2 users
-
-User is not already a member
-User is already a member
-User is already an owner
-User email was not found
-User is disabled
-User is enabled
-DL is not found
-Logging is correct
-#>
